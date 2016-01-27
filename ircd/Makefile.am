@@ -33,6 +33,7 @@ libircd_la_SOURCES =                  \
   ipv4_from_ipv6.c		\
   irc_radixtree.c		\
   irc_dictionary.c              \
+  irc_btree23.c              \
   ircd.c                        \
   ircd_parser.y                 \
   ircd_lexer.l                  \
