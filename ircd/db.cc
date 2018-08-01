@@ -46,6 +46,8 @@
 #include <ircd/db/database/env/file_lock.h>
 #include <ircd/db/database/env/state.h>
 
+//#define IRCD_DB_PORT
+//#define RB_DEBUG_DB_PORT
 
 // RocksDB port linktime-overriding interfaces (experimental).
 #ifdef IRCD_DB_PORT
@@ -654,11 +656,11 @@ try
 	opts.enable_thread_tracking = true;
 	opts.avoid_flush_during_recovery = true;
 	opts.delete_obsolete_files_period_micros = 0;
-	opts.max_background_jobs = 2;
-	opts.max_background_flushes = 1;
-	opts.max_background_compactions = 1;
-	opts.max_subcompactions = 1;
-	opts.max_open_files = -1; //ircd::info::rlimit_nofile / 4;
+	opts.max_background_jobs = 0;
+	opts.max_background_flushes = 0;
+	opts.max_background_compactions = 0;
+	opts.max_subcompactions = 0;
+	opts.max_open_files = 0; //ircd::info::rlimit_nofile / 4;
 	//opts.allow_concurrent_memtable_write = true;
 	//opts.enable_write_thread_adaptive_yield = false;
 	//opts.use_fsync = true;
@@ -2218,7 +2220,15 @@ noexcept
 	          u,
 	          reflect(prio));
 	#endif
-
+/*
+	ctx::context
+	{
+		"db task", context::DETACH, [this, f, a]
+		{
+			f(a);
+		}
+	};
+*/
 	return defaults.Schedule(f, a, prio, tag, u);
 }
 
@@ -2234,6 +2244,7 @@ noexcept
 	          reflect(pri));
 	#endif
 
+	//return 0;
 	return defaults.UnSchedule(tag, pri);
 }
 
@@ -2249,6 +2260,7 @@ noexcept
 	          a);
 	#endif
 
+	assert(0);
 	return defaults.StartThread(f, a);
 }
 
@@ -2292,6 +2304,7 @@ noexcept
 	          reflect(pri));
 	#endif
 
+	assert(0);
 	return defaults.SetBackgroundThreads(num, pri);
 }
 
@@ -2307,6 +2320,7 @@ noexcept
 	          reflect(pri));
 	#endif
 
+	//return;
 	return defaults.IncBackgroundThreadsIfNeeded(num, pri);
 }
 
@@ -5767,6 +5781,7 @@ ircd::db::_seek_offload(database::column &c,
 	}};
 
 	ctx::offload(function);
+	//function();
 	return blocking_it;
 }
 

@@ -278,7 +278,7 @@ struct ircd::json::expectation_failure
 {
 	expectation_failure(const char *const &start,
 	                    const qi::expectation_failure<const char *> &e,
-	                    const ssize_t &show_max = 64)
+	                    const ssize_t &show_max = 0)
 	:parse_error
 	{
 		"Expected %s. You input %zd invalid characters at position %zd: %s",
@@ -1889,8 +1889,13 @@ ircd::json::stringify(mutable_buffer &buf,
 			const string_view sv{v};
 			printer(buf, printer.string, sv);
 			//TODO: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-			const string_view ret{start, begin(buf)};
-			if(endswith(ret, "\\\"")) printer(buf, printer.quote);
+			string_view ret{start, begin(buf)};
+			if(endswith(ret, "\\\""))
+			{
+				printer(buf, printer.quote);
+				ret = string_view{start, begin(buf)};
+			}
+			assert(serialized(v) == size(ret));
 			break;
 		}
 
@@ -2031,6 +2036,7 @@ ircd::json::serialized(const value &v)
 			const string_view sv{v.string, v.len};
 			ret += !startswith(sv, '"');
 			ret += !endswith(sv, '"');
+			ret += endswith(sv, "\\\""); //TODO: XXXXXXXXXXXXXXX
 			return ret;
 		}
 	};

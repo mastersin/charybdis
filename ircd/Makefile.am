@@ -115,27 +115,12 @@ libircd_la_SOURCES =   \
 	server.cc          \
 	client.cc          \
 	resource.cc        \
-	m/id.cc            \
-	m/event.cc         \
-	m/dbs.cc           \
-	m/state.cc         \
-	m/room.cc          \
-	m/request.cc       \
-	m/v1.cc            \
-	m/m.cc             \
 	ircd.cc            \
 	###
 
 if AIO
 libircd_la_SOURCES +=  \
 	aio.cc             \
-	###
-endif
-
-if JS
-libircd_la_SOURCES +=  \
-	js.cc              \
-	xdr.cc             \
 	###
 endif
 

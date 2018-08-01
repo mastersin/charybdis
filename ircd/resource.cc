@@ -140,198 +140,6 @@ noexcept
 	};
 }
 
-namespace ircd
-{
-	static void cache_warm_origin(const string_view &origin);
-	static string_view verify_origin(client &client, resource::method &method, resource::request &request);
-	static string_view authenticate(client &client, resource::method &method, resource::request &request);
-}
-
-/// Authenticate a client based on access_token either in the query string or
-/// in the Authentication bearer header. If a token is found the user_id owning
-/// the token is copied into the request. If it is not found or it is invalid
-/// then the method being requested is checked to see if it is required. If so
-/// the appropriate exception is thrown.
-ircd::string_view
-ircd::authenticate(client &client,
-                   resource::method &method,
-                   resource::request &request)
-{
-	request.access_token =
-	{
-		request.query["access_token"]
-	};
-
-	if(empty(request.access_token))
-	{
-		const auto authorization
-		{
-			split(request.head.authorization, ' ')
-		};
-
-		if(iequals(authorization.first, "bearer"_sv))
-			request.access_token = authorization.second;
-	}
-
-	const bool requires_auth
-	{
-		method.opts.flags & method.REQUIRES_AUTH
-	};
-
-	if(!request.access_token && requires_auth)
-		throw m::error
-		{
-			http::UNAUTHORIZED, "M_MISSING_TOKEN",
-			"Credentials for this method are required but missing."
-		};
-
-	if(!request.access_token)
-		return {};
-
-	static const m::event::fetch::opts fopts
-	{
-		m::event::keys::include
-		{
-			"sender"
-		}
-	};
-
-	const m::room::state tokens{m::user::tokens, &fopts};
-	tokens.get(std::nothrow, "ircd.access_token", request.access_token, [&request]
-	(const m::event &event)
-	{
-		// The user sent this access token to the tokens room
-		request.user_id = m::user::id
-		{
-			at<"sender"_>(event)
-		};
-	});
-
-	if(!request.user_id && requires_auth)
-		throw m::error
-		{
-			http::UNAUTHORIZED, "M_UNKNOWN_TOKEN",
-			"Credentials for this method are required but invalid."
-		};
-
-	return request.user_id;
-}
-
-ircd::string_view
-ircd::verify_origin(client &client,
-                    resource::method &method,
-                    resource::request &request)
-try
-{
-	const bool required
-	{
-		method.opts.flags & method.VERIFY_ORIGIN
-	};
-
-	const auto authorization
-	{
-		split(request.head.authorization, ' ')
-	};
-
-	const bool supplied
-	{
-		iequals(authorization.first, "X-Matrix"_sv)
-	};
-
-	if(!supplied && !required)
-		return {};
-
-	if(!supplied && required)
-		throw m::error
-		{
-			http::UNAUTHORIZED, "M_MISSING_AUTHORIZATION",
-			"Required X-Matrix Authorization was not supplied"
-		};
-
-	const m::request::x_matrix x_matrix
-	{
-		request.head.authorization
-	};
-
-	const m::request object
-	{
-		x_matrix.origin, my_host(), method.name, request.head.uri, request.content
-	};
-
-	if(!object.verify(x_matrix.key, x_matrix.sig))
-		throw m::error
-		{
-			http::FORBIDDEN, "M_INVALID_SIGNATURE",
-			"The X-Matrix Authorization is invalid."
-		};
-
-	request.node_id = {"", x_matrix.origin};
-	request.origin = x_matrix.origin;
-
-	// If we have an error cached from previously not being able to
-	// contact this origin we can clear that now that they're alive.
-	server::errclear(request.origin);
-
-	// The origin was verified so we can invoke the cache warming now.
-	cache_warm_origin(request.origin);
-
-	return request.origin;
-}
-catch(const m::error &)
-{
-	throw;
-}
-catch(const std::exception &e)
-{
-	log::derror
-	{
-		"X-Matrix Authorization from %s: %s",
-		string(remote(client)),
-		e.what()
-	};
-
-	throw m::error
-	{
-		http::UNAUTHORIZED, "M_UNKNOWN_ERROR",
-		"An error has prevented authorization: %s",
-		e.what()
-	};
-}
-
-ircd::conf::item<ircd::seconds>
-cache_warmup_time
-{
-	{ "name",     "ircd.cache_warmup_time" },
-	{ "default",  3600L                    },
-};
-
-/// We can smoothly warmup some memory caches after daemon startup as the
-/// requests trickle in from remote servers. This function is invoked after
-/// a remote contacts and reveals its identity with the X-Matrix verification.
-///
-/// This process helps us avoid cold caches for the first requests coming from
-/// our server. Such requests are often parallel requests, for ex. to hundreds
-/// of servers in a Matrix room at the same time.
-///
-/// This function does nothing after the cache warmup period has ended.
-void
-ircd::cache_warm_origin(const string_view &origin)
-try
-{
-	if(ircd::uptime() > seconds(cache_warmup_time))
-		return;
-
-	// Make a query through SRV and A records.
-	net::dns(origin, net::dns::prefetch_ipport);
-}
-catch(const std::exception &e)
-{
-	log::derror
-	{
-		"Cache warming for '%s' :%s", origin, e.what()
-	};
-}
-
 void
 ircd::resource::operator()(client &client,
                            const http::request::head &head,
@@ -465,16 +273,6 @@ ircd::resource::operator()(client &client,
 		client.request.param, tokens(pathparm, '/', client.request.param)
 	};
 
-	// Client access token verified here. On success, user_id owning the token
-	// is copied into the client.request structure. On failure, the method is
-	// checked to see if it requires authentication and if so, this throws.
-	authenticate(client, method, client.request);
-
-	// Server X-Matrix header verified here. Similar to client auth, origin
-	// which has been authed is referenced in the client.request. If the method
-	// requires, and auth fails or not provided, this function throws.
-	verify_origin(client, method, client.request);
-
 	// Finally handle the request.
 	handle_request(client, method, client.request);
 }
@@ -489,37 +287,37 @@ try
 }
 catch(const json::not_found &e)
 {
-	throw m::error
+	throw http::error
 	{
-		http::NOT_FOUND, "M_BAD_JSON", "Required JSON field: %s", e.what()
+		http::NOT_FOUND, "Required JSON field: %s", e.what()
 	};
 }
 catch(const json::print_error &e)
 {
-	throw m::error
+	throw http::error
 	{
-		http::INTERNAL_SERVER_ERROR, "M_NOT_JSON", "Generator Protection: %s", e.what()
+		http::INTERNAL_SERVER_ERROR, "Generator Protection: %s", e.what()
 	};
 }
 catch(const json::error &e)
 {
-	throw m::error
+	throw http::error
 	{
-		http::BAD_REQUEST, "M_NOT_JSON", "%s", e.what()
+		http::BAD_REQUEST, "%s", e.what()
 	};
 }
 catch(const std::out_of_range &e)
 {
-	throw m::error
+	throw http::error
 	{
-		http::NOT_FOUND, "M_NOT_FOUND", "%s", e.what()
+		http::NOT_FOUND, "%s", e.what()
 	};
 }
 catch(const ctx::timeout &e)
 {
-	throw m::error
+	throw http::error
 	{
-		http::BAD_GATEWAY, "M_REQUEST_TIMEOUT", "%s", e.what()
+		http::BAD_GATEWAY, "%s", e.what()
 	};
 }
 
@@ -796,17 +594,17 @@ try
 			return;
 		}
 
-		default: throw m::error
+		default: throw http::error
 		{
-			http::INTERNAL_SERVER_ERROR, "M_NOT_JSON", "Cannot send json::%s as response content", type(value)
+			http::INTERNAL_SERVER_ERROR, "Cannot send json::%s as response content", std::string{type(value)}
 		};
 	}
 }
 catch(const json::error &e)
 {
-	throw m::error
+	throw http::error
 	{
-		http::INTERNAL_SERVER_ERROR, "M_NOT_JSON", "Generator Protection: %s", e.what()
+		http::INTERNAL_SERVER_ERROR, "Generator Protection: %s", e.what()
 	};
 }
 
@@ -834,9 +632,9 @@ try
 }
 catch(const json::error &e)
 {
-	throw m::error
+	throw http::error
 	{
-		http::INTERNAL_SERVER_ERROR, "M_NOT_JSON", "Generator Protection: %s", e.what()
+		http::INTERNAL_SERVER_ERROR, "Generator Protection: %s", e.what()
 	};
 }
 
@@ -864,9 +662,9 @@ try
 }
 catch(const json::error &e)
 {
-	throw m::error
+	throw http::error
 	{
-		http::INTERNAL_SERVER_ERROR, "M_NOT_JSON", "Generator Protection: %s", e.what()
+		http::INTERNAL_SERVER_ERROR, "Generator Protection: %s", e.what()
 	};
 }
 

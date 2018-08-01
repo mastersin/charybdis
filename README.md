@@ -1,67 +1,61 @@
-# This — is The **Construct**
+# Web Construct
 
-<img align="right" src="https://i.imgur.com/TIf8kEC.png" />
+### WebAssembly virtual machine for servers, clusters, and distributed executions
 
-#### Internet Relay Chat daemon: *Matrix Construct*
+Construct is a **[single system image](https://en.wikipedia.org/wiki/Single_system_image)
+runtime environment** for [WebAssembly](https://webassembly.org/) applications. It
+facilitates the execution of [WebAssembly](https://webassembly.org/) binaries among
+multiple servers.
 
-IRCd was a free and open source server which facilitated real-time communication over the
-internet. It was started by Jarkko Oikarinen in 1988 at the University of Oulu and [its
-derivatives](https://upload.wikimedia.org/wikipedia/commons/d/d8/IRCd_software_implementations.png)
-underpinned the major IRC networks for decades.
+- [Distributed shared memory](https://en.wikipedia.org/wiki/Distributed_shared_memory) model.
+Message-passing is accomplished through shared-memory and trapdoors. The runtime provides
+the actual communication; the application may also shape communication with fences and
+configuration parameters.
 
-Due to its age and stagnation since the mid-2000's, a growing number of proprietary cloud services
-are now filling the vacuum of innovation. In 2014 a new approach was proposed to reinvigorate
-real-time communication for free and open source software: a *federation of networks* known as
-*the matrix*.
+- Automatic [checkpointing](https://en.wikipedia.org/wiki/Application_checkpointing) of application state in case of failure.
+The failure of any node (or minority of nodes) will have minimal impact as other nodes
+can continue the execution. The runtime is concerned with the *observed* effects of
+an application for coherent automatic recovery.
 
-<h4 align="right">
-	IRCd has been rewritten for the global federation of networks &nbsp;&nbsp&nbsp;
-</h4>
+- Transparent [migration](https://en.wikipedia.org/wiki/Process_migration) for load, I/O and data-locality.
+The system will optimize the time and place(s) of execution for applications based
+on several factors and configuration parameters. This is founded on a data-oriented
+strategy where execution may occur on a node which already has a memory segment rather
+than paging that memory over to the execution.
 
-<img align="right" src="https://i.imgur.com/DUuGSrH.png" />
+- [Single-level storage](https://en.wikipedia.org/wiki/Single-level_store) exclusively via memory mappings.
+The runtime provides shared memory between applications and may persist memory segments after
+they terminate. Userspace daemons can then organize a named filesystem hierarchy if desired.
 
-**This is the Construct** — the first Matrix server written in C++. It is designed to be
-fast and highly scalable, and to be community developed by volunteer contributors over
-the internet. This mission strives to make the software easy to understand, modify, audit,
-and extend. It remains true to its roots with its modular design and having minimal
-requirements.
+- Optimistic consistency through [software transactional memory](https://en.wikipedia.org/wiki/Software_transactional_memory).
+By default an application's memory is intuitively strongly-ordered and coherent: a suite of
+concurrency primitives are then offered to relax and parallelize execution. Traditional
+interfaces such as fences, atomics, and mutexes are available to application programmers. This is
+extended by an optimistic execution feature with commit/rollback provided by the runtime:
+branches may be taken by nodes on a speculative basis where conflicting executions are rolled-back
+to be retried with updated memory.
 
-Even though all of the old code has been rewritten, the same spirit and
-_philosophy of its predecessors_ is still obvious throughout.
+#### Construct can execute untrusted bytecodes received from remote clients.
 
-Similar to the legacy IRC protocol's origins, Matrix wisely leverages technologies in vogue
-for its day to aid the virility of implementations. A vibrant and growing ecosystem
-[already exists](https://matrix.org/docs/projects/try-matrix-now.html).
+Construct provides the latest generation of web applications a flexible way
+to interface with their server component by constructing a server-side environment
+with access to a potentially large and complex dataset. Clients then send code
+for execution in the environment -- nearer to the data than the client. Only
+the specific result desired by the client developer is returned over the wire.
 
-<br />
-
-#### Dependencies
+### Dependencies
 
 - **Boost** (1.66 or later)
-Replacing libratbox with the rich and actively developed libraries.
-
 - **RocksDB** (based on LevelDB):
-A lightweight and embedded database superseding sqlite3.
-
 - **Sodium** (NaCl crypto):
-Provides ed25519 required for the Matrix Federation.
-
 - **OpenSSL** (libssl/libcrypto):
-Provides HTTPS TLS / X.509 / etc.
-
 - **GNU C++ compiler**, **automake**, **autoconf**, **autoconf2.13**,
 **autoconf-archive**, **libtool**, **shtool**
 
 ##### Additional dependencies
 
 - **libmagic** (~Optional~):
-Content MIME type recognition.
-
 - **zlib** or **lz4** or **snappy** (Optional):
-Provides compression for the database, etc.
-
-*Notes*:
-- libircd requires a platform capable of loading dynamic shared objects at runtime.
 
 
 #### Platforms
@@ -75,12 +69,6 @@ Provides compression for the database, etc.
 
 ## Installation
 
-<a href="https://github.com/tulir/gomuks">
-	<img align="right" src="https://i.imgur.com/YMUAULE.png" />
-</a>
-
-### Building from git
-
 ```
 ./autogen.sh
 ./configure
@@ -88,7 +76,7 @@ make
 sudo make install
 ```
 
-#### Building from git (STANDALONE)
+#### (STANDALONE)
 
 *Intended to allow building with dependencies that have not made their way
 to mainstream systems.*
@@ -174,39 +162,3 @@ When `--enable-debug` is used `--with-log-level=DEBUG` is implied. Otherwise
 for release mode `--with-log-level=INFO` is implied. Large deployments with
 many users may consider lower than `INFO` to maximize optimization and reduce
 noise.
-
-
-## Developers
-
-<a href="https://github.com/mujx/nheko">
-	<img align="right" src="https://i.imgur.com/GQ91GOK.png" />
-	<br />
-</a>
-
-[![](https://img.shields.io/badge/License-BSD-brightgreen.svg)]() [![](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)]()
-
- Generate doxygen using `/usr/bin/doxygen tools/doxygen.conf` the target
- directory is `doc/html`. Browse to `doc/html/index.html`.
-
-## Plan
-
-#### Roadmap for service
-
-- [x] **Phase One**: Matrix clients using HTTPS.
-- [ ] **Phase Two**: Legacy IRC network TS6 protocol.
-- [ ] **Phase Three**: Legacy IRC clients using RFC1459 / RFC2812 legacy grammars.
-
-#### Roadmap for deployments
-
-The deployment mode is a macro of configuration variables which tune the daemon
-for how it is being used. Modes mostly affect aspects of local clients.
-
-- [x] **Personal**: One or few users. Few default restrictions; higher log output.
-- [ ] **Company**: Hundreds of users. Moderate default restrictions.
-- [ ] **Public**: Thousands of users. Untrusting configuration defaults.
-
-#### Roadmap for innovation
-
-- [x] Phase Zero: **Core libircd**: Utils; Modules; Contexts; JSON; Database; HTTP; etc...
-- [x] Phase One: **Matrix Protocol**: Core VM; Core modules; Protocol endpoints; etc...
-- [ ] Phase Two: **Construct Cluster**: Kademlia sharding of events; Maymounkov's erasure codes.

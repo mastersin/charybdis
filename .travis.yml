@@ -2,7 +2,6 @@
 # see travis-ci.org for details
 
 language: cpp
-sudo: required
 
 git:
   submodules: false
@@ -18,13 +17,11 @@ git:
 matrix:
   include:
   - os: linux
-    dist: trusty
-    compiler: g++-6
+    dist: xenial
     sudo: required
+    compiler: g++-6
     addons:
       apt:
-        sources:
-        - ubuntu-toolchain-r-test
         packages:
         - ['gcc-6', 'g++-6']
         - ['libssl-dev', 'libsodium-dev']

@@ -47,19 +47,11 @@ root_get
 void
 init_files()
 {
-	// TODO: XXX
-	for(const auto &file : fs::ls_recursive("/home/jason/charybdis/charybdis/deps/riot-web/webapp/"))
-	{
-		const auto name(tokens_after(file, '/', 6));
-		files.emplace(std::string(name), file);
-	}
-/*
 	for(const auto &file : fs::ls_recursive("/home/jason/charybdis/charybdis/modules/static/"))
 	{
 		const auto name(tokens_after(file, '/', 5));
 		files.emplace(std::string(name), file);
 	}
-*/
 }
 
 resource::response

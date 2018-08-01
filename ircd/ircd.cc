@@ -192,13 +192,10 @@ noexcept try
 	db::init _db_;           // RocksDB
 	server::init _server_;   // Server related
 	client::init _client_;   // Client related
-	js::init _js_;           // SpiderMonkey
-	m::init _matrix_;        // Matrix
 
 	// Any deinits which have to be done with all subsystems intact
 	const unwind shutdown{[&]
 	{
-		_matrix_.close();
 		_server_.interrupt();
 		_client_.interrupt();
 		_server_.close();

@@ -343,7 +343,7 @@ try
 
 		return;
 	}
-
+/*
 	// This signal handler (though not a *real* signal handler) is still
 	// running on the main async stack and not an ircd::ctx. The rehash
 	// function does a lot of IO so it requires an ircd::ctx.
@@ -356,6 +356,7 @@ try
 
 		rehash_conf();
 	}};
+*/
 }
 catch(const std::exception &e)
 {

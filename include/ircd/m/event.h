@@ -39,6 +39,7 @@ namespace ircd::m
 
 	// Topological
 	bool before(const event &a, const event &b); // A directly referenced by B
+	bool sort(const vector_view<const event *> &);
 
 	id::event make_id(const event &, id::event::buf &buf, const const_buffer &hash);
 	id::event make_id(const event &, id::event::buf &buf);
