@@ -175,7 +175,7 @@ try
 
 	static const auto max_linear_sync
 	{
-		8 //TODO: conf
+		384 //TODO: conf
 	};
 
 	return
@@ -422,6 +422,10 @@ synchronize(client &client,
 	if(!room.membership(user_id, "join"))
 		return false;
 
+//	if(json::get<"type"_>(event) == "m.room.message")
+//		if(json::get<"sender"_>(event) == user_id)
+//			return false;
+
 	update_sync(client, request, args, event, room);
 	return true;
 }
@@ -647,10 +651,15 @@ polylog_sync_presence(shortpoll &sp,
 {
 	json::stack::member member{out, "events"};
 	json::stack::array array{member};
+
+	return;
+
 	const m::user::mitsein mitsein
 	{
 		sp.user
 	};
+
+	//std::cout << "MITSEIN COUNT: " << mitsein.count("join") << std::endl;
 
 	mitsein.for_each("join", [&sp, &array]
 	(const m::user &user)
@@ -748,13 +757,13 @@ polylog_sync_rooms(shortpoll &sp,
 		json::stack::object object{member};
 		polylog_sync_rooms__membership(sp, object, "join");
 	}
-
+/*
 	{
 		json::stack::member member{object, "leave"};
 		json::stack::object object{member};
 		polylog_sync_rooms__membership(sp, object, "leave");
 	}
-
+*/
 	{
 		json::stack::member member{object, "invite"};
 		json::stack::object object{member};
@@ -782,7 +791,9 @@ polylog_sync_rooms__membership(shortpoll &sp,
 		const m::room::id &room_id{room.room_id};
 		json::stack::member member{object, room_id};
 		json::stack::object object{member};
+		std::cout << "sync: " << room_id << std::endl;
 		polylog_sync_room(sp, object, room, membership);
+		std::cout << "done: " << room_id << std::endl;
 	});
 }
 
@@ -880,11 +891,6 @@ polylog_sync_room_state(shortpoll &sp,
 			"state_key",
 			"type",
 		},
-
-		db::gopts
-		{
-			db::get::NO_CACHE
-		}
 	};
 
 	json::stack::member member
@@ -980,11 +986,6 @@ polylog_sync_room_timeline_events(shortpoll &sp,
 			"state_key",
 			"type",
 		},
-
-		db::gopts
-		{
-			db::get::NO_CACHE
-		}
 	};
 
 	// messages seeks to the newest event, but the client wants the oldest
@@ -1057,11 +1058,6 @@ polylog_sync_room_ephemeral_events(shortpoll &sp,
 	{
 		static const m::event::fetch::opts fopts
 		{
-			db::gopts
-			{
-				db::get::NO_CACHE
-			},
-
 			m::event::keys::include
 			{
 				"event_id",

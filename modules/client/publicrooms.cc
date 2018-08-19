@@ -133,9 +133,29 @@ post__publicrooms(client &client,
 		return post__publicrooms_remote(client, request, server, search_term, limit);
 
 	std::vector<json::value> chunk;
+	const m::room::state publix{public_};
+	publix.test("ircd.room", [&](const m::event &event)
+	{
+		chunk.emplace_back(json::members
+		{
+			{ "aliases",              json::empty_array       }, //TODO: X
+			{ "canonical_alias",      string_view{}           }, //TODO: X
+			{ "name",                 string_view{}           }, //TODO: X
+			{ "num_joined_members",   1L                      }, //TODO: XXX
+			{ "room_id",              at<"state_key"_>(event) },
+			{ "topic",                string_view{}           }, //TODO: X
+			{ "world_readable",       true                    }, //TODO: XXX
+			{ "guest_can_join",       true                    }, //TODO: XXX
+			{ "avatar_url",           string_view{}           }, //TODO: X
+		});
+
+		return chunk.size() >= limit;
+	});
+
+	//TODO: XXX
+	int64_t total_room_count_estimate{chunk.size()};
 	const string_view next_batch;
 	const string_view prev_batch;
-	const int64_t total_room_count_estimate{0};
 
 	return resource::response
 	{
@@ -150,10 +170,42 @@ post__publicrooms(client &client,
 }
 
 resource::method
-get_method
+post_method
 {
-	publicrooms_resource, "GET", get__publicrooms
+	publicrooms_resource, "POST", post__publicrooms
 };
+
+static resource::response
+post__publicrooms_remote(client &client,
+                         const resource::request &request,
+                         const string_view &server,
+                         const string_view &search,
+                         const size_t &limit)
+{
+	std::vector<json::value> chunk;
+	int64_t total_room_count_estimate{0};
+	const string_view next_batch;
+	const string_view prev_batch;
+
+	return resource::response
+	{
+		client, json::members
+		{
+			{ "chunk",                      { chunk.data(), chunk.size() } },
+			{ "next_batch",                 next_batch                     },
+			{ "prev_batch",                 prev_batch                     },
+			{ "total_room_count_estimate",  total_room_count_estimate      },
+		}
+	};
+}
+
+static resource::response
+post__publicrooms_since(client &client,
+                        const resource::request &request,
+                        const string_view &since)
+{
+	throw m::UNSUPPORTED{};
+}
 
 static void
 _create_public_room(const m::event &)

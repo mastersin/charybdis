@@ -48,33 +48,39 @@ get__initialsync_remote(client &client,
 
 	const auto when
 	{
-		ircd::now<steady_point>() + seconds(15) //TODO: conf
+		ircd::now<steady_point>() + seconds(60) //TODO: conf
 	};
 
-	std::vector<m::event> messages;
-	messages.reserve(bf_opts.limit);
-	if(backfill_request.wait_until(when) != ctx::future_status::timeout)
+	string_view membership{"join"};
+
+	std::vector<m::event> messages; try
 	{
-		const auto &code{backfill_request.get()};
-		const json::object &response{backfill_request};
-		const json::array &pdus
+		messages.reserve(bf_opts.limit);
+		if(backfill_request.wait_until(when, std::nothrow))
 		{
-			response.get("pdus")
-		};
+			const auto &code{backfill_request.get()};
+			const json::object &response{backfill_request};
 
-		for(const json::object &event : pdus)
-			messages.emplace_back(event);
+			const json::array &pdus
+			{
+				response.get("pdus")
+			};
 
-		std::sort(std::begin(messages), std::end(messages), []
-		(const auto &a, const auto &b)
-		{
-			return at<"depth"_>(a) < at<"depth"_>(b);
-		});
+			for(const json::object &event : pdus)
+				messages.emplace_back(event);
+
+			std::sort(std::begin(messages), std::end(messages));
+		}
+		else cancel(backfill_request);
 	}
-	else cancel(backfill_request);
+	catch(const http::error &e)
+	{
+		if(e.code == http::FORBIDDEN)
+			membership = "leave";
+	}
 
 	std::vector<m::event> state;
-	if(state_request.wait_until(when) != ctx::future_status::timeout)
+	if(membership == "join" && state_request.wait_until(when, std::nothrow))
 	{
 		const auto &code{state_request.get()};
 		const json::object &response{state_request};
@@ -95,15 +101,10 @@ get__initialsync_remote(client &client,
 		for(const json::object &event : pdus)
 			state.emplace_back(event);
 
-		std::sort(std::begin(state), std::end(state), []
-		(const auto &a, const auto &b)
-		{
-			return at<"depth"_>(a) < at<"depth"_>(b);
-		});
+		std::sort(std::begin(state), std::end(state));
 	}
 	else cancel(state_request);
 
-	const string_view membership{"join"};
 	const string_view visibility{"public"};
 	std::vector<json::value> account_data;
 
@@ -112,9 +113,23 @@ get__initialsync_remote(client &client,
 		messages.data(), messages.data() + messages.size()
 	};
 
-	const json::strung states
+	std::vector<m::event> astate;
+	astate.reserve(state.size());
+	std::copy_if(begin(state), end(state), begin(astate), []
+	(const m::event &event)
 	{
-		state.data(), state.data() + state.size()
+		if(json::get<"type"_>(event) != "m.room.member")
+			return true;
+
+		if(json::get<"membership"_>(event) == "leave")
+			return false;
+
+		return true;
+	});
+
+	const json::strung astates
+	{
+		astate.data(), astate.data() + astate.size()
 	};
 
 	resource::response
@@ -123,7 +138,7 @@ get__initialsync_remote(client &client,
 		{
 			{ "room_id",       room_id                                        },
 			{ "membership",    membership                                     },
-			{ "state",         states                                         },
+			{ "state",         astates                                        },
 			{ "visibility",    visibility                                     },
 			{ "account_data",  { account_data.data(), account_data.size() }   },
 			{ "messages",      json::members
@@ -139,6 +154,8 @@ get__initialsync_remote(client &client,
 	vmopts.non_conform.set(m::event::conforms::MISSING_PREV_STATE);
 	vmopts.non_conform.set(m::event::conforms::MISSING_MEMBERSHIP);
 	vmopts.prev_check_exists = false;
+	vmopts.history = false;
+	vmopts.verify = false;
 	vmopts.nothrows = -1U;
 
 	for(const auto &event : state)
@@ -162,7 +179,7 @@ get__initialsync(client &client,
 
 		throw m::NOT_FOUND
 		{
-			"room_id '%s' does not exist", room_id
+			"room_id '%s' does not exist", string_view{room_id}
 		};
 	}
 
@@ -181,6 +198,10 @@ get__initialsync(client &client,
 		state.reserve(state_.count());
 		state_.for_each([&state](const m::event &event)
 		{
+			if(json::get<"type"_>(event) == "m.room.member" &&
+			   json::get<"membership"_>(event) == "leave")
+				return;
+
 			state.emplace_back(json::strung(event));
 		});
 	}

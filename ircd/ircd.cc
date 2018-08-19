@@ -284,9 +284,13 @@ try
 	}};
 
 	if(!ircd::runlevel_changed::list.empty())
-		ircd::post(call_users);
-	else
-		call_users();
+	{
+		if(new_runlevel == runlevel::HALT)
+			ircd::post(call_users);
+		else
+			ircd::dispatch(call_users);
+	}
+	else call_users();
 }
 catch(const std::exception &e)
 {

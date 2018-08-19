@@ -29,8 +29,11 @@ media_blocks_descriptor
 		typeid(string_view), typeid(string_view)
 	},
 
-	// options
-	{}
+	{},      // options
+	{},      // comparaor
+	{},      // prefix transform
+	64_MiB,  // cache size
+	64_MiB,  // compressed cache size
 };
 
 const db::database::description

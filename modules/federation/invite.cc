@@ -85,12 +85,26 @@ put__invite(client &client,
 
 	check_event(request, event);
 
-	//TODO: eval()
+/*
+	m::vm::opts vmopts;
+	vmopts.non_conform |= m::event::conforms::MISSING_PREV_STATE;
+	m::vm::eval
+	{
+		event, vmopts
+	};
+*/
+	char sigs_buf[512];
+	const m::event signed_event
+	{
+		signatures(sigs_buf, event)
+	};
 
 	const json::strung event_strung
 	{
-		event
+		signed_event
 	};
+
+	std::cout << event_strung << std::endl;
 
 	const json::member revent
 	{

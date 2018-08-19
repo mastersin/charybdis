@@ -296,6 +296,56 @@ console_cmd__help(opt &out, const string_view &line)
 bool
 console_cmd__test(opt &out, const string_view &line)
 {
+	const auto func0{[]
+	{
+		std::cout << std::endl << ctx::id() << " start" << std::endl;
+		const m::room::state state
+		{
+			m::room{"!ircd:zemos.net"}
+		};
+
+		size_t res(0);
+		state.test(m::event::closure_idx_bool{[&res]
+		(const m::event::idx &event_idx)
+		{
+			++res;
+			return res > 256;
+		}});
+
+		std::cout << std::endl << ctx::id() << " result: " << res << std::endl;
+	}};
+
+	const auto func1{[]
+	{
+		std::cout << std::endl << ctx::id() << " start" << std::endl;
+		const m::room::state state
+		{
+			m::room{"!tokens:zemos.net"}
+		};
+
+		size_t res(0);
+		state.test(m::event::closure_idx_bool{[&res]
+		(const m::event::idx &event_idx)
+		{
+			++res;
+			return true;
+		}});
+
+		std::cout << std::endl << ctx::id() << " result: " << res << std::endl;
+	}};
+
+	std::cout << "starting" << std::endl;
+	context c[2]
+	{
+		{ func0 },
+		{ func1 },
+	};
+
+	c[0].join();
+	std::cout << std::endl << "finish 0" << std::endl;
+
+	c[1].join();
+	std::cout << std::endl << "finish 1" << std::endl;
 	return true;
 }
 
@@ -1945,6 +1995,38 @@ catch(const std::out_of_range &e)
 }
 
 bool
+console_cmd__db__DROP__DROP__DROP(opt &out, const string_view &line)
+try
+{
+	const params param{line, " ",
+	{
+		"dbname", "column"
+	}};
+
+	const auto dbname
+	{
+		param.at(0)
+	};
+
+	const auto colname
+	{
+		param.at(0)
+	};
+
+	auto &database
+	{
+		db::database::get(dbname)
+	};
+
+	return true;
+}
+catch(const std::out_of_range &e)
+{
+	out << "No open database by that name" << std::endl;
+	return true;
+}
+
+bool
 console_cmd__db__list(opt &out, const string_view &line)
 {
 	const auto available
@@ -2550,7 +2632,7 @@ console_cmd__net__listen__list(opt &out, const string_view &line)
 
 	const list &l(listeners);
 	for(const auto &listener : l)
-		out << "one at " << (const void *)&listener << std::endl;
+		out << listener << std::endl;
 
 	return true;
 }
@@ -2708,8 +2790,20 @@ console_cmd__key__get(opt &out, const string_view &line)
 		{
 			out << keys << std::endl;
 		});
+	}
+	else
+	{
+		const std::pair<string_view, string_view> queries[1]
+		{
+			{ server_name, {} }
+		};
 
-		return true;
+		m::keys::query(query_server, queries, [&out]
+		(const auto &keys)
+		{
+			out << keys << std::endl;
+			return true;
+		});
 	}
 
 	return true;
@@ -6628,6 +6722,7 @@ console_cmd__fed__sync(opt &out, const string_view &line)
 	vmopts.prev_check_exists = false;
 	vmopts.head_must_exist = false;
 	vmopts.history = false;
+	vmopts.verify = false;
 	vmopts.notify = false;
 	vmopts.debuglog_accept = true;
 	vmopts.nothrows = -1;
@@ -6720,6 +6815,7 @@ console_cmd__fed__state(opt &out, const string_view &line)
 	vmopts.non_conform.set(m::event::conforms::MISSING_MEMBERSHIP);
 	vmopts.prev_check_exists = false;
 	vmopts.head_must_exist = false;
+	vmopts.verify = false;
 	vmopts.history = false;
 	vmopts.notify = false;
 	m::vm::eval eval
@@ -6876,6 +6972,7 @@ console_cmd__fed__backfill(opt &out, const string_view &line)
 	vmopts.prev_check_exists = false;
 	vmopts.head_must_exist = false;
 	vmopts.history = false;
+	vmopts.verify = false;
 	vmopts.notify = false;
 	vmopts.head = false;
 	vmopts.refs = true;

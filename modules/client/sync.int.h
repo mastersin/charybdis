@@ -24,11 +24,19 @@ struct syncargs
 	syncargs(const resource::request &);
 };
 
+struct stats
+{
+	ircd::timer timer;
+	size_t flush_bytes {0};
+	size_t flush_count {0};
+};
+
 struct shortpoll
 {
 	ircd::client &client;
 	const resource::request &request;
 	const syncargs &args;
+	struct stats stats;
 
 	const uint64_t &since
 	{
@@ -48,6 +56,18 @@ struct shortpoll
 	const m::user user
 	{
 		request.user_id
+	};
+
+	const std::string filter_buf
+	{
+		args.filter_id?
+			user.filter(std::nothrow, args.filter_id):
+			std::string{}
+	};
+
+	const m::filter filter
+	{
+		json::object{filter_buf}
 	};
 
 	const m::user::room user_room
@@ -85,7 +105,8 @@ struct shortpoll
 					client, http::OK, "application/json; charset=utf-8"
 				);
 
-			response->write(buf);
+			stats.flush_bytes += response->write(buf);
+			stats.flush_count++;
 			return buf;
 		},
 		size_t(sync_flush_hiwat)

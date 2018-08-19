@@ -585,10 +585,10 @@ ircd::m::dbs::desc::events__event_idx
 	96_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	16_MiB, //TODO: conf
+	32_MiB, //TODO: conf
 
 	// bloom filter bits
-	16,
+	24,
 
 	// expect queries hit
 	false,
@@ -639,7 +639,7 @@ ircd::m::dbs::desc::events__event_bad
 	8_MiB, //TODO: conf
 
 	// bloom filter bits
-	16,
+	24,
 
 	// expect queries hit
 	false,
@@ -734,7 +734,7 @@ ircd::m::dbs::desc::events__room_head
 	events__room_head__pfx,
 
 	// cache size
-	32_MiB, //TODO: conf
+	64_MiB, //TODO: conf
 
 	// cache size for compressed assets
 	0, //TODO: conf
@@ -961,10 +961,10 @@ ircd::m::dbs::desc::events__room_events
 	events__room_events__pfx,
 
 	// cache size
-	64_MiB, //TODO: conf
+	128_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	24_MiB, //TODO: conf
+	64_MiB, //TODO: conf
 
 	// bloom filter bits
 	0, // no bloom filter because of possible comparator issues
@@ -1075,10 +1075,10 @@ ircd::m::dbs::desc::events__room_joined
 	64_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	16_MiB, //TODO: conf
+	24_MiB, //TODO: conf
 
 	// bloom filter bits
-	10,
+	24,
 
 	// expect queries hit
 	false,
@@ -1184,10 +1184,10 @@ ircd::m::dbs::desc::events__room_state
 	128_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	32_MiB, //TODO: conf
+	64_MiB, //TODO: conf
 
 	// bloom filter bits
-	16,
+	24,
 
 	// expect queries hit
 	false,
@@ -1223,13 +1223,13 @@ ircd::m::dbs::desc::events__state_node
 	{},
 
 	// cache size
-	96_MiB, //TODO: conf
+	128_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	24_MiB, //TODO: conf
+	64_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	16,
 
 	// expect queries hit
 	true,
@@ -1273,13 +1273,13 @@ ircd::m::dbs::desc::events_event_id
 	{},
 
 	// cache size
-	32_MiB, //TODO: conf
+	128_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	64_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	true,
@@ -1320,13 +1320,13 @@ ircd::m::dbs::desc::events_type
 	{},
 
 	// cache size
-	16_MiB, //TODO: conf
+	48_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	32_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	true,
@@ -1367,13 +1367,13 @@ ircd::m::dbs::desc::events_content
 	{},
 
 	// cache size
-	32_MiB, //TODO: conf
+	128_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	128_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	true,
@@ -1414,7 +1414,7 @@ ircd::m::dbs::desc::events_redacts
 	8_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	false,
@@ -1454,13 +1454,13 @@ ircd::m::dbs::desc::events_room_id
 	{},
 
 	// cache size
-	16_MiB, //TODO: conf
+	64_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	32_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	true,
@@ -1500,13 +1500,13 @@ ircd::m::dbs::desc::events_sender
 	{},
 
 	// cache size
-	16_MiB, //TODO: conf
+	128_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	64_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	true,
@@ -1548,13 +1548,13 @@ ircd::m::dbs::desc::events_state_key
 	{},
 
 	// cache size
-	16_MiB, //TODO: conf
+	64_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	32_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	false,
@@ -1591,13 +1591,13 @@ ircd::m::dbs::desc::events_origin
 	{},
 
 	// cache size
-	16_MiB, //TODO: conf
+	64_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	32_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	true,
@@ -1638,13 +1638,13 @@ ircd::m::dbs::desc::events_origin_server_ts
 	{},
 
 	// cache size
-	16_MiB, //TODO: conf
+	64_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	32_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	true,
@@ -1679,13 +1679,13 @@ ircd::m::dbs::desc::events_signatures
 	{},
 
 	// cache size
-	16_MiB, //TODO: conf
+	24_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	12_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	true,
@@ -1719,13 +1719,13 @@ ircd::m::dbs::desc::events_auth_events
 	{},
 
 	// cache size
-	16_MiB, //TODO: conf
+	24_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	12_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	false,
@@ -1759,13 +1759,13 @@ ircd::m::dbs::desc::events_depth
 	{},
 
 	// cache size
-	16_MiB, //TODO: conf
+	64_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	32_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	true,
@@ -1799,13 +1799,13 @@ ircd::m::dbs::desc::events_hashes
 	{},
 
 	// cache size
-	16_MiB, //TODO: conf
+	24_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	12_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	true,
@@ -1839,13 +1839,13 @@ ircd::m::dbs::desc::events_membership
 	{},
 
 	// cache size
-	16_MiB, //TODO: conf
+	24_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	12_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	false,
@@ -1879,13 +1879,13 @@ ircd::m::dbs::desc::events_prev_events
 	{},
 
 	// cache size
-	24_MiB, //TODO: conf
+	64_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	32_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	true,
@@ -1919,13 +1919,13 @@ ircd::m::dbs::desc::events_prev_state
 	{},
 
 	// cache size
-	8_MiB, //TODO: conf
+	12_MiB, //TODO: conf
 
 	// cache size for compressed assets
-	8_MiB, //TODO: conf
+	12_MiB, //TODO: conf
 
 	// bloom filter bits
-	12,
+	24,
 
 	// expect queries hit
 	false,
@@ -2013,11 +2013,11 @@ ircd::m::dbs::desc::events
 
 	// event_id => uint64_t
 	// Mapping of faulty event_id to possible alternative event_idx.
-	events__event_bad,
+	//events__event_bad,
 
 	// (room_id, event_id) => (event_idx)
 	// Mapping of all current head events for a room.
-	events__room_head,
+	//events__room_head,
 
 	// (room_id, (depth, event_idx)) => (state_root)
 	// Sequence of all events for a room, ever.
@@ -2034,4 +2034,8 @@ ircd::m::dbs::desc::events
 	// (state tree node id) => (state tree node)
 	// Mapping of state tree node id to node data.
 	events__state_node,
+
+
+	events__event_bad,
+	events__room_head,
 };

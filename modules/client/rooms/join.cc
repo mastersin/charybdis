@@ -145,7 +145,7 @@ bootstrap(const string_view &host,
 		room_id, user_id, buf, { host }
 	};
 
-	request.wait(seconds(8)); //TODO: conf
+	request.wait(seconds(20)); //TODO: conf
 	const auto code
 	{
 		request.get()
@@ -266,7 +266,7 @@ bootstrap(const string_view &host,
 		room_id, event_id, strung, buf2, { host }
 	};
 
-	sj.wait(seconds(8)); //TODO: conf
+	sj.wait(seconds(30)); //TODO: conf
 
 	const auto sjcode
 	{

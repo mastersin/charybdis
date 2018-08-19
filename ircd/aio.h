@@ -21,7 +21,7 @@ struct ircd::fs::aio
 	struct request;
 
 	/// Maximum number of events we can submit to kernel
-	static constexpr const size_t &MAX_EVENTS {64};
+	static constexpr const size_t &MAX_EVENTS {512};
 
 	/// Internal semaphore for synchronization of this object
 	ctx::dock dock;
@@ -46,7 +46,7 @@ struct ircd::fs::aio
 	void handle(const boost::system::error_code &, const size_t) noexcept;
 	void set_handle();
 
-	bool wait_interrupt();
+	bool wait();
 	bool interrupt();
 
 	aio();

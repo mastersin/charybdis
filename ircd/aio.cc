@@ -30,7 +30,7 @@ ircd::fs::aio::~aio()
 noexcept
 {
 	interrupt();
-	wait_interrupt();
+	wait();
 
 	boost::system::error_code ec;
 	resfd.close(ec);
@@ -49,7 +49,7 @@ ircd::fs::aio::interrupt()
 }
 
 bool
-ircd::fs::aio::wait_interrupt()
+ircd::fs::aio::wait()
 {
 	if(!resfd.is_open())
 		return false;
@@ -128,7 +128,7 @@ noexcept try
 
 	// The count should be at least 1 event. The only reason to return 0 might
 	// be related to an INTR; this assert will find out and may be commented.
-	assert(count > 0);
+	//assert(count > 0);
 
 	for(ssize_t i(0); i < count; ++i)
 		handle_event(event[i]);

@@ -690,13 +690,14 @@ try
 	opts.enable_thread_tracking = true;
 	opts.avoid_flush_during_recovery = true;
 	opts.delete_obsolete_files_period_micros = 0;
-	opts.max_background_jobs = 2;
-	opts.max_background_flushes = 1;
-	opts.max_background_compactions = 1;
-	opts.max_subcompactions = 1;
-	opts.max_open_files = -1; //ircd::info::rlimit_nofile / 4;
+	opts.max_background_jobs = 0;
+	opts.max_background_flushes = 0;
+	opts.max_background_compactions = 0;
+	opts.max_subcompactions = 0;
+	opts.max_open_files = 0; //ircd::info::rlimit_nofile / 4;
 	//opts.allow_concurrent_memtable_write = true;
 	//opts.enable_write_thread_adaptive_yield = false;
+	opts.use_direct_reads = true;
 	//opts.use_fsync = true;
 
 	#ifdef RB_DEBUG
@@ -2899,6 +2900,14 @@ const noexcept
 // random_access_file
 //
 
+const ircd::fs::fd::opts
+_random_access_file_opts{[]
+{
+	ircd::fs::fd::opts ret{std::ios_base::in};
+	ret.direct = true;
+	return ret;
+}()};
+
 ircd::db::database::env::random_access_file::random_access_file(database *const &d,
                                                                 const std::string &name,
                                                                 const EnvOptions &opts)
@@ -2908,7 +2917,7 @@ ircd::db::database::env::random_access_file::random_access_file(database *const 
 }
 ,fd
 {
-	name, std::ios_base::in | std::ios_base::out
+	name, _random_access_file_opts
 }
 {
 }
@@ -2942,8 +2951,9 @@ ircd::db::database::env::random_access_file::Read(uint64_t offset,
                                                   size_t length,
                                                   Slice *result,
                                                   char *scratch)
-const noexcept
+const noexcept try
 {
+	assert(result);
 	#ifdef RB_DEBUG_DB_ENV
 	log::debug
 	{
@@ -2957,7 +2967,6 @@ const noexcept
 	};
 	#endif
 
-	assert(result);
 	const mutable_buffer buf
 	{
 		scratch, length
@@ -2971,6 +2980,22 @@ const noexcept
 	*result = slice(read);
 
 	return Status::OK();
+}
+catch(const fs::filesystem_error &e)
+{
+	log::error
+	{
+		log, "'%s': rfile:%p read:%p offset:%zu length:%zu scratch:%p :%s",
+		d.name,
+		this,
+		result,
+		offset,
+		length,
+		scratch,
+		e.what()
+	};
+
+	return Status::InvalidArgument();
 }
 
 rocksdb::Status
@@ -3030,14 +3055,14 @@ bool
 ircd::db::database::env::random_access_file::use_direct_io()
 const noexcept
 {
-	return false;
+	return _random_access_file_opts.direct;
 }
 
 size_t
 ircd::db::database::env::random_access_file::GetRequiredBufferAlignment()
 const noexcept
 {
-	return 16;
+	return 4096;
 }
 
 //
@@ -5917,6 +5942,17 @@ ircd::db::prefetch(rocksdb::Cache &cache,
                    column &column,
                    const string_view &key)
 {
+	if(exists(cache, key))
+		return;
+
+	const db::gopts opts
+	{
+		// skip rocksdb inserting this into the columns cache twice.
+		&cache == db::cache(column) || &cache == db::cache_compressed(column)?
+			db::get::NO_CACHE:
+			(enum db::get)0
+	};
+
 	assert(0);
 }
 
